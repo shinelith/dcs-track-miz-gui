@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/appstyle.css">
+    <link rel="stylesheet" href="css/font-awesome.min.css"> 
+    <script src="lib/vue.js"></script>
+    <title>DCS TrackMiz v1.0</title>
+</head>
+<body>
+    <div id="app">
+            <div class="col-xs-7">
+                <div class="row">
+                    <div
+                        v-if="trkDragState=='standby' || trkDragState=='highlight'"
+                        :class="trkAreaClass" 
+                        @dragover="dragfile('trk')"
+                        @dragleave="dragleave('trk')" 
+                        @drop="drop('trk',$event)" 
+                        @dragover.prevent>
+                        {{trkAreaHint}}
+                    </div>
+                    <div id="trkarea" class="file_active"
+                        v-if="trkDragState=='set'"
+                        @dragover="dragfile('trk')">
+                        <div class="vertical">
+                            <p class="fileName">{{trkFileName}}</p>
+                            <p class="fileDesc">{{trkFileInfo}}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div 
+                        v-if="mizDragState=='standby' || mizDragState=='highlight'" 
+                        :class="mizAreaClass"
+                        @dragover="dragfile('miz')" 
+                        @dragleave="dragleave('miz')"
+                        @drop="drop('miz',$event)"
+                        @dragover.prevent>
+                        {{mizAreaHint}}
+                    </div>
+                    <div id="mizarea" class="file_active" 
+                        v-if="mizDragState=='set'"
+                        @dragover="dragfile('miz')">
+                        <div class="vertical">
+                            <p class="fileName">{{mizFileName}}</p>
+                            <p class="fileDesc">{{mizFileInfo}}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <transition name="slide-fade">
+                        <p :class="messageType" v-if="messageRefresh" v-html="message"></p>
+                    </transition>
+                </div>
+            </div>
+            <div class="col-xs-5">
+                <div class="row">
+                    <button @click="trkToMiz">录像转文件</button>
+                </div>
+                <div class="row">
+                    <button @click="trkToTrackmiz">转换为带track的任务</button>
+                    <a @click="openUrl('https://github.com/shinelith/dcs-track-miz');" class="hint">了解track动画的录制方法</a>
+                </div>
+                <div class="row">
+                    <button @click="trkMergeToMiz">合并动画并到任务</button>
+                </div>
+                <div class="row">
+                    <button @click="cleanMizTrack">清除任务中的track</button>
+                </div>
+                <div class="appInfo">
+                    <h2 class="appName">DCS TrackMiz GUI v1.0</h2>
+                    <p>LITH Powered by <a @click="openUrl('https://github.com/shinelith/dcs-track-miz');">dcs-track-miz</a>
+                    </p>
+                </div>
+            </div>
+    </div>
+    
+    <script>
+        const electron = require('electron');
+        const ipcRenderer = electron.ipcRenderer;
+
+        /**
+         *  字符串资源
+         */
+        var _ = function(str) {
+            s = {
+                dragTrkHere:"拖动trk文件到这里",
+                dragMizHere:"拖动miz文件到这里",
+                dragRelease:"在此处松开",
+                howToUse:"拖动trk或miz文件到窗口左边，然后点击右侧的功能按钮",
+                needATrkFile:"需要拖入一个trk文件",
+                needAMizFile:"需要拖入一个miz文件",
+                needTrkAndMizFile:"需要拖入一个trk文件和一个miz文件",
+                needAButton:"下面点击右侧的功能按钮",
+                working:"正在执行",
+                jobDone:"成功",
+            }
+            return s[str]?s[str]:str;
+        }
+
+        /**
+        * 显示提示
+        * str 显示的内容
+        * type 提示的类型，参照MessageType
+        */
+        function showMessage(str,type) {
+            vapp.messageRefresh = false;
+            if(type){
+                vapp.messageType = "message " + type;
+            } else {
+                vapp.messageType = "message " + MessageType.NORMAL;
+            }
+            var icon = null;
+            
+            switch(type){
+                case MessageType.SUCCESS:
+                    icon = "<i class='fa fa-check'></i>";
+                    break;
+                case MessageType.ERROR:
+                    icon = "<i class='fa fa-exclamation'></i>";
+                    break;
+                default:
+                    icon = "<i class='fa fa-arrow-circle-right'></i>";
+            }
+            vapp.message = icon + " " + str;
+            setTimeout(function(){vapp.messageRefresh = true;},100);
+        }
+
+        // 消息类型
+        var MessageType = {
+            NORMAL: "normal",
+            SUCCESS: "success",
+            ERROR:"error"
+        };
+
+        ipcRenderer.on('execResult',(e,code,data)=>{
+            if(code==200){
+                var openFileDir = "  <a href=\"javascript:openDir('"+data.outputdir+"');\">打开目录</a>"
+                showMessage(_('jobDone') + openFileDir,MessageType.SUCCESS);
+                resetFile();
+            }
+        })
+
+        /**
+         * TRK 转 MIZ
+         */
+        var onTrkToMizClick = function() {
+            if(vapp.trkFile == null){
+                showMessage(_('needATrkFile'),MessageType.ERROR);
+                return;
+            }
+            showMessage(_('working'),MessageType.NORMAL);
+            ipcRenderer.send('trkToMiz', vapp.trkFile.path,true);
+            
+        }
+
+        var onTrkToTrackmizClick = function(){
+            if(vapp.trkFile == null){
+                showMessage(_('needATrkFile'),MessageType.ERROR);
+                return;
+            }
+            showMessage(_('working'),MessageType.NORMAL);
+            ipcRenderer.send('trkToMiz', vapp.trkFile.path,false);
+        }
+
+        var onTrkMergeToMizClick = function() {
+            if(vapp.trkFile == null || vapp.mizFile == null){
+                showMessage(_('needTrkAndMizFile'),MessageType.ERROR);
+                return;
+            }
+            showMessage(_('working'),MessageType.NORMAL);
+            ipcRenderer.send('trkMergeToMiz', vapp.trkFile.path, vapp.mizFile.path);
+        }
+
+        var onCleanMizTrackClick = function() {
+            if(vapp.mizFile == null){
+                showMessage(_('needAMizFile'),MessageType.ERROR);
+                return;
+            }
+            showMessage(_('working'),MessageType.NORMAL);
+            ipcRenderer.send('cleanMizTrack',vapp.mizFile.path);
+        }
+
+        var openUrl = function(url){
+            ipcRenderer.send('openUrl',url);
+        }
+
+        var openDir = function(path){
+            ipcRenderer.send('openDir',path);
+        }
+
+        var setTrkFile = function(){
+            var file = vapp.trkFile;
+            vapp.trkFileName = file.name;
+            vapp.trkFileInfo = file.path + " (" + (file.size / 1024).toFixed(2) +"KB)";
+        }
+
+        var setMizFile = function(){
+            var file = vapp.mizFile;
+            vapp.mizFileName = file.name;
+            vapp.mizFileInfo = file.path + " (" + (file.size / 1024).toFixed(2) +"KB)";
+        }
+
+        var resetFile = function(){
+            vapp.trkFile = null
+            vapp.mizFile = null
+            vapp.trkDragState = "standby"
+            vapp.mizDragState = "standby"
+        }
+
+        var vapp = new Vue({
+            el: "#app",
+            data:{
+                messageType: null,
+                messageRefresh: false,
+                message: null,
+
+                trkAreaHint: _("dragTrkHere"),
+                trkFileName: null,
+                trkFileInfo: null,
+                trkDragState: "standby",
+                trkAreaClass: "dragArea",
+                trkFile:null,
+
+                mizAreaHint: _("dragMizHere"),
+                mizFileName: null,
+                mizFileInfo: null,
+                mizDragState: "standby",
+                mizAreaClass: "dragArea",
+                mizFile:null,
+
+                outputPath: null,
+            },
+            methods: {
+                trkToMiz: onTrkToMizClick,
+                trkToTrackmiz: onTrkToTrackmizClick,
+                trkMergeToMiz: onTrkMergeToMizClick,
+                cleanMizTrack: onCleanMizTrackClick,
+                // 文件进入拖拽区
+                dragfile: function(area){
+                    if(area == 'trk')
+                        this.trkDragState = "highlight";
+                    if(area == 'miz')
+                        this.mizDragState = "highlight";
+                },
+                // 移出拖拽区
+                dragleave: function (area){
+                    if(area == 'trk'){
+                        if(this.trkFile)
+                            this.trkDragState = "set";
+                        else 
+                            this.trkDragState = "standby";
+                    }
+                    if(area == 'miz'){
+                        if(this.mizFile)
+                            this.mizDragState = "set";
+                        else
+                            this.mizDragState = "standby";
+                    }
+                },
+                // 拖拽释放
+                drop: function (area,event){
+                    const oldfile = this.trkFile;
+                    const dragfile = event.dataTransfer.files[0];
+                    if(area == 'trk'){
+                        if(dragfile.name.indexOf('.trk') != -1){
+                            this.trkFile = dragfile;
+                            this.trkDragState = "set";
+                            showMessage(_('needAButton',MessageType.NORMAL));
+                        }else if(oldfile!=null){
+                            this.trkFile = oldfile;
+                            this.trkDragState = "set";
+                            showMessage(_('needATrkFile'),MessageType.ERROR);
+                        }else{
+                            this.trkFile = null;
+                            this.trkDragState = "standby";
+                            showMessage(_('needATrkFile'),MessageType.ERROR);
+                        }
+                    }
+                    if(area == 'miz'){
+                        const oldfile = this.mizFile;
+                        const dragfile = event.dataTransfer.files[0];
+                        if(dragfile.name.indexOf('.miz') != -1){
+                            this.mizFile = dragfile;
+                            this.mizDragState = "set";
+                            showMessage(_('needAButton',MessageType.NORMAL));
+                        }else if(oldfile!=null){
+                            this.mizFile = oldfile;
+                            this.mizDragState = "set";
+                            showMessage(_('needAMizFile'),MessageType.ERROR);
+                        }else{
+                            this.mizFile = null;
+                            this.mizDragState = "standby";
+                            showMessage(_('needAMizFile'),MessageType.ERROR);
+                        }
+                    }
+                },
+                openUrl : openUrl,
+                openDir : openDir,
+            },
+            watch:{
+                trkDragState : function(val,oldval){
+                    if(val == "standby") {
+                        this.trkAreaClass = "dragArea";
+                        this.trkAreaHint = _("dragTrkHere");
+                    }
+                    if(val == "highlight") {
+                        this.trkAreaClass = "dragArea_highlight";
+                        this.trkAreaHint = _("dragRelease");
+                    }
+                    if(val == "set") {
+                        this.trkAreaClass = "dragArea_active";
+                        setTrkFile();
+                    }
+                },
+                mizDragState : function(val,oldval){
+                    if(val == "standby") {
+                        this.mizAreaClass = "dragArea";
+                        this.mizAreaHint = _("dragMizHere");
+                    }
+                    if(val == "highlight") {
+                        this.mizAreaClass = "dragArea_highlight";
+                        this.mizAreaHint = _("dragRelease");
+                    }
+                    if(val == "set") {;
+                        this.mizAreaClass = "dragArea_active";
+                        setMizFile();
+                    }
+                }
+            }
+        });
+
+        // Init
+        showMessage(_('howToUse'),MessageType.NORMAL);
+    </script>
+</body>
+</html>

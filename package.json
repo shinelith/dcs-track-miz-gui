@@ -1,0 +1,27 @@
+{
+  "name": "DCSTrackMiz",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "author": "LITH",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^5.0.1"
+  },
+  "dependencies": {
+    "async": "^2.6.1",
+    "fs": "0.0.1-security",
+    "jszip": "^3.1.5",
+    "path": "^0.12.7"
+  },
+  "build": {
+    "appId": "com.shinestudio.dtmgui",
+    "copyright": "LITH",
+    "productName": "DCS TrackMiz"
+  }
+}

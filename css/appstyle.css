@@ -1,0 +1,123 @@
+[v-cloak] {
+    display: none;
+}
+body{
+    background: #f3f3f3;
+}
+a:hover{
+    cursor: pointer;
+}
+.section {
+    margin: 8px;
+}
+
+label {
+    font-weight: normal;
+}
+
+.appName {
+    font-size: 1.6em;
+    text-align: center;
+}
+
+.row {
+    margin: 20px 0px;
+}
+
+.row button {
+    width: 100%;
+    height: 3em;
+    background: linear-gradient(to bottom, #ffffff 5%, #f6f6f6 100%);
+    border-radius: 3px;
+    border: 1px solid #dcdcdc;
+    display: inline-block;
+    cursor: pointer;
+    color: #666666;
+    font-size: 14px;
+    text-decoration: none;
+    outline:none;
+    transition: all 0.2s ease-out 0s;
+}
+.row button:hover {
+    border: 1px solid #8bc34a;
+    color:#8bc34a;
+    box-shadow:0px 0px 4px #8bc34a;
+}
+.row button:active {
+    color:#FFF;
+    background: linear-gradient(to bottom, #8bc34a 5%, #8bc34a 100%);
+}
+.row .hint {
+    text-align: center;
+    float: right;
+}
+
+.appInfo {
+    font-size: 12px;
+    text-align: center;
+}
+
+.dragArea,
+.dragArea_highlight,
+.file_active {
+    border-radius: 5px;
+    border: 1px dashed #CCC;
+    text-align: center;
+    line-height: 115px;
+    height: 115px;
+    background: #f9f9f9;
+    font-size: 18px;
+    font-weight:normal;
+    color: #9E9E9E;
+    transition: all 0.2s ease-out 0s;
+}
+.dragArea_highlight {
+    color:#333;
+    border: 1px dashed #a7a7a7;
+    box-shadow:0px 0px 4px #777;
+}
+.file_active {
+    line-height: normal;
+    color: #000;
+    background: linear-gradient(to bottom, #ffffff 5%, #f6f6f6 100%);
+    border: 1px solid #6f6f6f;
+}
+.file_active:hover {
+    box-shadow:0px 0px 4px #777;
+}
+.fileDesc {
+    font-size:14px;
+}
+.vertical {
+    position: relative;
+    transform: translate(-50%, -50%);
+    top: 50%;
+    left: 50%;
+}
+.message {
+    font-size: 16px;
+}
+
+.error {
+    color: #f44336;
+}
+
+.success {
+    color: #8bc34a;
+}
+
+.normal {
+    color: #000000b5;
+}
+
+.slide-fade-enter-active {
+    transition: all .5s ease;
+}
+.slide-fade-leave-active {
+}
+
+.slide-fade-enter,
+.slide-fade-leave-to {
+    transform: translateX(20px);
+    opacity: 0.2;
+}
