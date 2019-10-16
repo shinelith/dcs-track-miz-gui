@@ -5,12 +5,12 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "pack": "electron-builder --dir",
-    "dist": "electron-builder"
+    "dist-win": "electron-builder --win --x64"
   },
   "author": "LITH",
   "license": "ISC",
   "devDependencies": {
+    "electron-builder": "^21.2.0",
     "electron": "^5.0.1"
   },
   "dependencies": {
@@ -20,8 +20,12 @@
     "path": "^0.12.7"
   },
   "build": {
-    "appId": "com.shinestudio.dtmgui",
+    "appId": "com.shinestudio.app.dcs.trackmizgui",
     "copyright": "LITH",
-    "productName": "DCS TrackMiz"
+    "productName": "DCSTrackMiz",
+    "win":{
+      "icon":"build/icon.ico",
+      "target":["nsis","zip"]
+    }
   }
 }

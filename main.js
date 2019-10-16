@@ -1,5 +1,5 @@
 // Modules to control application life and create native browser window
-const { app, BrowserWindow, ipcMain, shell } = require('electron')
+const { app, BrowserWindow, ipcMain, shell, Menu } = require('electron')
 
 const os = require('os')
 const path = require('path')
@@ -11,10 +11,12 @@ const dtm = require('./lib/dtm')
 let mainWindow
 
 function createWindow () {
+  Menu.setApplicationMenu(null)
+  
   // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 780, //650
-    height: 375, //355
+    height: 400, //355
     webPreferences: {
       nodeIntegration: true
     }
